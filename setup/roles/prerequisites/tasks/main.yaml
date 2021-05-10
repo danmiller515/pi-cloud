@@ -1,0 +1,4 @@
+- name: Ensure working directory {{working_dir}} exists
+  file:
+    path: "{{working_dir}}"
+    state: directory

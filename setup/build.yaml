@@ -1,0 +1,14 @@
+- hosts: all
+  roles:
+    - prerequisites
+    - install_microk8s
+
+- hosts: master
+  roles:
+    - enable_microk8s_services
+    - export_kubeconfig
+    - get_add_node_token
+
+- hosts: node
+  roles:
+    - add_node

@@ -1,0 +1,1 @@
+working_dir: "{{ansible_env.HOME}}/microk8s-install"

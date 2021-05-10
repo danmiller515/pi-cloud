@@ -1,0 +1,84 @@
+- hosts: all
+  name: Bootstrap Pis
+  vars:
+    ansible_first_login_password: ubuntu
+    raspberry_pi_boot_config_options:
+      # Set the GPU memory split value.
+      - regexp: "^#?gpu_mem"
+        line: "gpu_mem=16"
+      # Enable 1200ma USB current on newer model Pis.
+      - regexp: "^#?max_usb_current"
+        line: "max_usb_current=1"
+    raspberry_pi_rc_local_options:
+      # Disable HDMI on startup (for power savings).
+      - regexp: "^/usr/bin/tvservice"
+        line: "/usr/bin/tvservice -o"
+  gather_facts: false
+  tasks:
+    - name: "Check and setup pi connections"
+      block:
+        - name: "Check if host is reachable"
+          wait_for:
+            timeout: 0
+          register: connect_rs
+          ignore_unreachable: yes
+          
+        - when: connect_rs is unreachable
+          name: "Try first login and change the password"
+          delegate_to: localhost
+          expect:
+            command: sshpass -p {{ ansible_first_login_password }} ssh {{ ansible_ssh_common_args }} {{ ansible_user }}@{{ inventory_hostname }}
+            timeout: 10
+            responses:
+              "Current password: ": "{{ ansible_first_login_password }}"
+              "New password: ": "{{ ansible_ssh_pass }}"
+              "Retype new password: ": "{{ ansible_ssh_pass }}"
+
+      always:
+        - name: "Gather facts about host"
+          setup:
+
+        - name: Ensure /boot/firmware/nobtcmd.txt file exists
+          become: true
+          retries: 3
+          copy:
+            content: ""
+            dest: /boot/firmware/nobtcmd.txt
+            force: no
+            group: sys
+            owner: root
+            mode: 0555
+            
+        - name: Ensure cgroups in /boot/firmware/nobtcmd.txt is enabled
+          become: true
+          lineinfile:
+            path: /boot/firmware/nobtcmd.txt
+            regexp: '^cgroup_enable=memory cgroup_memory='
+            line: 'cgroup_enable=memory cgroup_memory=1'
+          register: cgroups
+
+        - name: Configure options in /boot/config.txt.
+          lineinfile:
+            dest: /boot/config.txt
+            regexp: "{{ item.regexp }}"
+            line: "{{ item.line }}"
+            insertafter: EOF
+            state: present
+          with_items: "{{ raspberry_pi_boot_config_options }}"
+          register: bootconfig
+
+        - name: Configure options in /etc/rc.local.
+          lineinfile:
+            dest: /etc/rc.local
+            regexp: "{{ item.regexp }}"
+            line: "{{ item.line }}"
+            insertbefore: "^exit"
+            state: present
+          with_items: "{{ raspberry_pi_rc_local_options }}"
+          register: rclocal
+
+        - when: cgroups is changed or bootconfig is changed or rclocal is changed
+          become: true
+          name: Reboot to apply changes
+          reboot:
+            reboot_timeout: 3600

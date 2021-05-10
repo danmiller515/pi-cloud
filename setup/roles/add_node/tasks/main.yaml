@@ -1,0 +1,12 @@
+- name: addnode_address
+  debug:
+    msg: "{{ hostvars[groups['master'][0]]['addnode_address']}}"
+
+- name: Add node to cluster
+  become: true
+  command: "microk8s.join {{ hostvars[groups['master'][0]]['addnode_address']}}"
+  register: joinnode
+
+- name: joinnode output
+  debug:
+    msg: "{{ joinnode.stdout_lines }}"

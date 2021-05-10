@@ -1,0 +1,4 @@
+
+# Location on target host to export the MicroK8s kubeconfig file.
+working_dir: "{{ansible_env.HOME}}/microk8s-install"
+kubeconfig_host_path: "{{working_dir}}/config"
