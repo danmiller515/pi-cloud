@@ -1,14 +1,16 @@
 - hosts: all
+  name: Setup MicroK8s
   roles:
     - prerequisites
     - install_microk8s
+
+- hosts: node
+  name: Add nodes
+  serial: 1
+  roles:
+    - add_node
 
 - hosts: master
   roles:
     - enable_microk8s_services
     - export_kubeconfig
-    - get_add_node_token
-
-- hosts: node
-  roles:
-    - add_node

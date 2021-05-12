@@ -1,0 +1,12 @@
+- name: Wait for nodes to be ready
+  become: true
+  command: microk8s.kubectl wait --for condition=Ready nodes --all --timeout 5s
+  changed_when: False
+  register: output_nodes_wait
+  until: output_nodes_wait is not failed
+  delegate_to: "{{ groups['all'][0] }}"
+  retries: 60
+
+- name: output
+  debug:
+    msg: "{{ output_nodes_wait }}"

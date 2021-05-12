@@ -37,6 +37,9 @@
       always:
         - name: "Gather facts about host"
           setup:
+        - name: Set hostname
+          ansible.builtin.hostname:
+            name: "{{ inventory_hostname }}"
 
         - name: Ensure /boot/firmware/nobtcmd.txt file exists
           become: true

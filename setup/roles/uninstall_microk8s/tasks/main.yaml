@@ -1,0 +1,10 @@
+- name: Uninstall MicroK8s
+  become: true
+  snap:
+    name: microk8s
+    classic: yes
+    channel: "{{microk8s_channel}}"
+    state: absent
+  register: output_microk8s_uninstall
+  until: output_microk8s_uninstall is not failed
+  retries: 3

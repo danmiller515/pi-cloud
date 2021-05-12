@@ -1,12 +1,30 @@
+- name: Fetch address and token to add node
+  become: true
+  command: microk8s.add-node
+  register: addnode
+  delegate_to: "{{ groups['all'][0] }}"
+
 - name: addnode_address
   debug:
-    msg: "{{ hostvars[groups['master'][0]]['addnode_address']}}"
+    msg: "{{ addnode }}"
+
+- name: Set add node address fact
+  set_fact:
+    addnode_address: "{{ addnode.stdout_lines | map('regex_search','^\\s*microk8s join?(.*)') | select('string') | list | first}}"
+  delegate_to: "{{ groups['all'][0] }}"
+
+- name: addnode_address
+  debug:
+    msg: "{{ addnode_address }}"
 
 - name: Add node to cluster
   become: true
-  command: "microk8s.join {{ hostvars[groups['master'][0]]['addnode_address']}}"
+  command: "{{ addnode_address }}"
   register: joinnode
 
 - name: joinnode output
   debug:
     msg: "{{ joinnode.stdout_lines }}"
+
+- include_role:
+    name: wait_for_nodes

@@ -1,0 +1,6 @@
+- hosts: all
+  tasks:
+    - name: Reboot nodes
+      become: true
+      reboot:
+        reboot_timeout: 3600

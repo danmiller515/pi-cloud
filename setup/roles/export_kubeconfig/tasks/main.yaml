@@ -17,6 +17,7 @@
   fetch:
     src: "{{kubeconfig_host_path}}"
     dest: "{{kubeconfig_local_path}}"
+    flat: yes
 - name: Print summary
   debug:
     msg: "{{kubeconfig_host_path}} copied to {{kubeconfig_local_path}}"
